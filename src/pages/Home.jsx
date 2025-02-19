@@ -1,7 +1,7 @@
 import MovieCard from "../components/MovieCard";
 import { useState, useEffect } from "react";
 import { searchMovies, getPopularMovies } from "../services/api";
-import "../css/Home.css"
+import "../css/Home.css";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,8 +18,7 @@ export default function Home() {
       } catch (err) {
         console.log(err);
         setError("Failed to load movies...");
-      }
-      finally {
+      } finally {
         setLoading(false);
       }
     };
@@ -27,9 +26,22 @@ export default function Home() {
     loadPopularMovies();
   }, []);
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    alert(searchQuery);
+    if (!searchQuery.trim()) return;
+    if (loading) return
+
+    setLoading(true);
+    try {
+      const searchResults = await searchMovies(searchQuery);
+      setMovies(searchResults);
+      setError(null);
+    } catch (err) {
+      console.log(err);
+      setError("Failed to search movies...")
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,14 +59,20 @@ export default function Home() {
         </button>
       </form>
 
-      <div className="movies-grid">
-        {movies.map(
-          (movie) =>
-            movie.title.toLowerCase().startsWith(searchQuery) && (
-              <MovieCard movie={movie} key={movie.id} />
-            )
-        )}
-      </div>
+      {error && <div className="error-message">{error}</div>}
+
+      {loading ? (
+        <div className="loading">Loading...</div>
+      ) : (
+        <div className="movies-grid">
+          {movies.map(
+            (movie) =>
+              movie.title.toLowerCase().startsWith(searchQuery) && (
+                <MovieCard movie={movie} key={movie.id} />
+              )
+          )}
+        </div>
+      )}
     </div>
   );
 }
